@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   signInWithPopup,
   GoogleAuthProvider,
-  OAuthProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -122,27 +121,6 @@ export const useAuth = () => {
     }
   };
 
-  const signInWithMicrosoft = async () => {
-    try {
-      setError(null);
-      setLoading(true);
-
-      const provider = new OAuthProvider('microsoft.com');
-      provider.setCustomParameters({
-        prompt: 'select_account',
-      });
-
-      const result = await signInWithPopup(auth, provider);
-
-      // User data will be loaded by onAuthStateChanged
-      return result.user;
-    } catch (err: any) {
-      console.error('Error signing in with Microsoft:', err);
-      setError(err.message || 'Failed to sign in with Microsoft');
-      setLoading(false);
-      throw err;
-    }
-  };
 
   const signUpWithEmail = async (email: string, password: string, displayName: string) => {
     try {
@@ -253,7 +231,6 @@ export const useAuth = () => {
     loading,
     error,
     signInWithGoogle,
-    signInWithMicrosoft,
     signUpWithEmail,
     signInWithEmail,
     resetPassword,

@@ -4,9 +4,9 @@ import { useAuth } from '../hooks/useAuth';
 type AuthMode = 'signin' | 'signup' | 'reset';
 
 const LoginPage: React.FC = () => {
-  const { signInWithGoogle, signInWithMicrosoft, signInWithEmail, signUpWithEmail, resetPassword, loading, error } = useAuth();
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, loading, error } = useAuth();
   const [authMode, setAuthMode] = useState<AuthMode>('signin');
-  const [signingIn, setSigningIn] = useState<'google' | 'microsoft' | 'email' | null>(null);
+  const [signingIn, setSigningIn] = useState<'google' | 'email' | null>(null);
 
   // Form state
   const [email, setEmail] = useState('');
@@ -24,15 +24,6 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const handleMicrosoftSignIn = async () => {
-    try {
-      setSigningIn('microsoft');
-      await signInWithMicrosoft();
-    } catch (err) {
-      console.error('Microsoft sign-in failed:', err);
-      setSigningIn(null);
-    }
-  };
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,31 +124,6 @@ const LoginPage: React.FC = () => {
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                       </svg>
                       <span className="text-gray-700 font-medium">Continue with Google</span>
-                    </>
-                  )}
-                </button>
-
-                {/* Microsoft Sign In */}
-                <button
-                  onClick={handleMicrosoftSignIn}
-                  disabled={loading || signingIn !== null}
-                  className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {signingIn === 'microsoft' ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                      <span className="text-gray-700 font-medium">Signing in...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" viewBox="0 0 23 23">
-                        <path fill="#f3f3f3" d="M0 0h23v23H0z" />
-                        <path fill="#f35325" d="M1 1h10v10H1z" />
-                        <path fill="#81bc06" d="M12 1h10v10H12z" />
-                        <path fill="#05a6f0" d="M1 12h10v10H1z" />
-                        <path fill="#ffba08" d="M12 12h10v10H12z" />
-                      </svg>
-                      <span className="text-gray-700 font-medium">Continue with Microsoft</span>
                     </>
                   )}
                 </button>

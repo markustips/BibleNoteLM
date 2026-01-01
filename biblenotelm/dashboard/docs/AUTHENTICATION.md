@@ -14,9 +14,8 @@ The BibleNoteLM dashboard implements a multi-tier authentication system with rol
   - Sign in with email and password
   - Password reset functionality
 - **Google Sign-In** - OAuth authentication via Google accounts
-- **Microsoft/Outlook Sign-In** - OAuth authentication via Microsoft accounts (Outlook, Office 365, etc.)
 
-All users (members, pastors, admins, super admins) can sign in using email/password, Google, or Microsoft authentication.
+All users (guests, members, pastors, admins, super admins) can sign in using email/password or Google authentication.
 
 ---
 
@@ -104,30 +103,30 @@ If not authenticated → Redirect to /login
 ### 2. Login Process
 
 ```typescript
-// User clicks "Sign in with Google" or "Sign in with Microsoft"
-signInWithGoogle() or signInWithMicrosoft()
+// User clicks "Sign in with Google" or "Sign in with email/password"
+signInWithGoogle() or signInWithEmail()
     ↓
-Firebase Authentication (OAuth)
+Firebase Authentication
     ↓
 onAuthStateChanged fires
     ↓
 loadUserData() from Firestore
     ↓
 If user exists: Load existing user data
-If new user: Create user document with role='member'
+If new user: Create user document with role='guest'
     ↓
 Update Zustand store with user data
     ↓
 Redirect based on role:
     - super_admin → /super-admin
-    - admin/pastor/member/subscriber → /dashboard
+    - guest/member/subscriber/admin/pastor → /dashboard
 ```
 
 ### 3. First-Time User Flow
 
 When a user signs in for the first time:
 
-1. User authenticates with Google or Microsoft
+1. User authenticates with Google OAuth or email/password
 2. System checks if user document exists in Firestore
 3. If not exists:
    - Create new user document
@@ -227,7 +226,6 @@ Located: [src/hooks/useAuth.ts](../src/hooks/useAuth.ts)
 - `signUpWithEmail(email, password, displayName)` - Create account with email/password
 - `signInWithEmail(email, password)` - Sign in with email/password
 - `signInWithGoogle()` - Sign in with Google OAuth
-- `signInWithMicrosoft()` - Sign in with Microsoft/Outlook OAuth
 - `resetPassword(email)` - Send password reset email
 - `signOut()` - Sign out current user
 - `loading` - Authentication loading state
@@ -246,14 +244,14 @@ Located: [src/hooks/useAuth.ts](../src/hooks/useAuth.ts)
 import { useAuth } from '../hooks/useAuth';
 
 const MyComponent = () => {
-  const { signInWithGoogle, signInWithMicrosoft, signOut, loading, error } = useAuth();
+  const { signInWithGoogle, signInWithEmail, signOut, loading, error } = useAuth();
 
   const handleGoogleLogin = async () => {
     await signInWithGoogle();
   };
 
-  const handleMicrosoftLogin = async () => {
-    await signInWithMicrosoft();
+  const handleEmailLogin = async (email: string, password: string) => {
+    await signInWithEmail(email, password);
   };
 };
 ```
@@ -264,12 +262,11 @@ const MyComponent = () => {
 
 Located: [src/components/LoginPage.tsx](../src/components/LoginPage.tsx)
 
-**Purpose:** Login screen with email/password, Google, and Microsoft authentication
+**Purpose:** Login screen with email/password and Google authentication
 
 **Features:**
 - Email/password authentication (sign up, sign in, password reset)
 - Google OAuth integration
-- Microsoft/Outlook OAuth integration
 - Toggle between sign-in, sign-up, and password reset modes
 - Form validation
 - Loading state during authentication
@@ -521,7 +518,7 @@ VITE_FIREBASE_APP_ID=your_app_id
 **Fix:**
 1. Check if user document exists in Firestore
 2. Ensure `role` field is set correctly
-3. Default role for new users is now `member` (automatically created on first sign-in)
+3. Default role for new users is now `guest` (automatically created on first sign-in)
 4. Clear browser cache and try again
 
 ### Super admin sees church dashboard
@@ -548,25 +545,21 @@ VITE_FIREBASE_APP_ID=your_app_id
 
 ### Implement Additional Features
 
-1. **Email/Password Authentication**
-   - Add email sign-in as alternative to Google
-   - Implement password reset flow
-
-2. **Multi-Factor Authentication (MFA)**
+1. **Multi-Factor Authentication (MFA)**
    - Add phone verification for super admin
    - Implement TOTP for enhanced security
 
-3. **Session Management**
+2. **Session Management**
    - Add session timeout
    - Implement "Remember me" functionality
    - Activity logging
 
-4. **User Management UI**
+3. **User Management UI**
    - Super admin can create/edit users
    - Role assignment interface
    - Bulk user operations
 
-5. **Audit Logging**
+4. **Audit Logging**
    - Log all super admin actions
    - Track role changes
    - Monitor sensitive operations
@@ -598,58 +591,6 @@ VITE_FIREBASE_APP_ID=your_app_id
 ```
 
 **Security:** Only accessible by `super_admin` role
-
----
-
-## Microsoft Authentication Setup
-
-### Firebase Console Configuration
-
-To enable Microsoft/Outlook authentication, you need to configure it in the Firebase Console:
-
-1. **Go to Firebase Console**
-   - Navigate to your project
-   - Click "Authentication" in the left sidebar
-   - Click "Sign-in method" tab
-
-2. **Enable Microsoft Provider**
-   - Click "Add new provider"
-   - Select "Microsoft"
-   - Toggle "Enable"
-
-3. **Azure AD App Registration** (Required)
-   - Go to [Azure Portal](https://portal.azure.com)
-   - Navigate to "Azure Active Directory" > "App registrations"
-   - Click "New registration"
-   - Name: "BibleNoteLM Dashboard"
-   - Supported account types: "Accounts in any organizational directory and personal Microsoft accounts"
-   - Redirect URI: Get from Firebase Console (format: `https://[project-id].firebaseapp.com/__/auth/handler`)
-   - Click "Register"
-
-4. **Configure Azure App**
-   - Copy "Application (client) ID"
-   - Go to "Certificates & secrets"
-   - Click "New client secret"
-   - Copy the secret value (show only once!)
-
-5. **Update Firebase Console**
-   - Paste "Application ID" in Firebase Console
-   - Paste "Application secret" in Firebase Console
-   - Click "Save"
-
-### Supported Microsoft Account Types
-
-The authentication supports:
-- **Personal Microsoft accounts** (Outlook.com, Hotmail.com, Live.com)
-- **Work/School accounts** (Office 365, Azure AD)
-- **Organizational accounts** (Company email with Microsoft SSO)
-
-### Testing Microsoft Sign-In
-
-1. Click "Sign in with Microsoft" button
-2. Select account or enter Microsoft email
-3. Authorize BibleNoteLM to access basic profile
-4. Redirect back to dashboard
 
 ---
 
