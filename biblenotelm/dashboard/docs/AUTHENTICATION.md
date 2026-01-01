@@ -2,10 +2,17 @@
 
 ## Overview
 
-The BibleNoteLM dashboard implements a two-tier authentication system with role-based access control (RBAC):
+The BibleNoteLM dashboard implements a multi-tier authentication system with role-based access control (RBAC) supporting all users:
 
-1. **Church Dashboard** - For pastors and church administrators to manage their individual church
+1. **Church Dashboard** - For all church members (members, subscribers, pastors, admins)
 2. **Super Admin Dashboard** - For the platform owner to view all churches and subscribers
+
+### Authentication Methods
+
+- **Google Sign-In** - OAuth authentication via Google accounts
+- **Microsoft/Outlook Sign-In** - OAuth authentication via Microsoft accounts (Outlook, Office 365, etc.)
+
+All users (members, pastors, admins, super admins) can sign in using either Google or Microsoft authentication.
 
 ---
 
@@ -60,11 +67,13 @@ guest (Not Authenticated)
 - View church content
 - Create prayer requests
 - View events
-- Limited features
+- Access to Church Dashboard (`/dashboard`)
+- Basic features (can be upgraded to subscriber)
 
 #### `guest`
 - No access to dashboard
 - Redirected to login page
+- Note: New users are automatically assigned `member` role upon first sign-in
 
 ---
 
@@ -87,22 +96,38 @@ If not authenticated → Redirect to /login
 ### 2. Login Process
 
 ```typescript
-// User clicks "Sign in with Google"
-signInWithGoogle()
+// User clicks "Sign in with Google" or "Sign in with Microsoft"
+signInWithGoogle() or signInWithMicrosoft()
     ↓
-Firebase Authentication (Google OAuth)
+Firebase Authentication (OAuth)
     ↓
 onAuthStateChanged fires
     ↓
 loadUserData() from Firestore
     ↓
+If user exists: Load existing user data
+If new user: Create user document with role='member'
+    ↓
 Update Zustand store with user data
     ↓
 Redirect based on role:
     - super_admin → /super-admin
-    - admin/pastor → /dashboard
-    - member/subscriber → /unauthorized
+    - admin/pastor/member/subscriber → /dashboard
 ```
+
+### 3. First-Time User Flow
+
+When a user signs in for the first time:
+
+1. User authenticates with Google or Microsoft
+2. System checks if user document exists in Firestore
+3. If not exists:
+   - Create new user document
+   - Assign default role: `member`
+   - Set subscriptionTier: `free`
+   - Record createdAt and lastLogin timestamps
+4. Redirect to `/dashboard`
+5. User can then join a church using a church code
 
 ### 3. Protected Routes
 
@@ -151,18 +176,31 @@ Located: [src/hooks/useAuth.ts](../src/hooks/useAuth.ts)
 
 **Methods:**
 - `signInWithGoogle()` - Sign in with Google OAuth
+- `signInWithMicrosoft()` - Sign in with Microsoft/Outlook OAuth
 - `signOut()` - Sign out current user
 - `loading` - Authentication loading state
 - `error` - Authentication error message
+
+**Features:**
+- Automatic user creation for first-time sign-ins
+- Default role assignment (`member`)
+- Last login timestamp tracking
+- Seamless integration with Zustand state
 
 **Usage:**
 ```tsx
 import { useAuth } from '../hooks/useAuth';
 
 const MyComponent = () => {
-  const { signInWithGoogle, signOut, loading, error } = useAuth();
+  const { signInWithGoogle, signInWithMicrosoft, signOut, loading, error } = useAuth();
 
-  // Use methods as needed
+  const handleGoogleLogin = async () => {
+    await signInWithGoogle();
+  };
+
+  const handleMicrosoftLogin = async () => {
+    await signInWithMicrosoft();
+  };
 };
 ```
 
@@ -172,13 +210,15 @@ const MyComponent = () => {
 
 Located: [src/components/LoginPage.tsx](../src/components/LoginPage.tsx)
 
-**Purpose:** Login screen with Google Sign-In button
+**Purpose:** Login screen with Google and Microsoft Sign-In buttons
 
 **Features:**
 - Google OAuth integration
+- Microsoft/Outlook OAuth integration
 - Loading state during sign-in
 - Error display
 - Responsive design
+- Separate loading states for each provider
 
 ---
 
@@ -423,7 +463,8 @@ VITE_FIREBASE_APP_ID=your_app_id
 **Fix:**
 1. Check if user document exists in Firestore
 2. Ensure `role` field is set correctly
-3. Default role is `guest` which has no dashboard access
+3. Default role for new users is now `member` (automatically created on first sign-in)
+4. Clear browser cache and try again
 
 ### Super admin sees church dashboard
 
@@ -499,6 +540,58 @@ VITE_FIREBASE_APP_ID=your_app_id
 ```
 
 **Security:** Only accessible by `super_admin` role
+
+---
+
+## Microsoft Authentication Setup
+
+### Firebase Console Configuration
+
+To enable Microsoft/Outlook authentication, you need to configure it in the Firebase Console:
+
+1. **Go to Firebase Console**
+   - Navigate to your project
+   - Click "Authentication" in the left sidebar
+   - Click "Sign-in method" tab
+
+2. **Enable Microsoft Provider**
+   - Click "Add new provider"
+   - Select "Microsoft"
+   - Toggle "Enable"
+
+3. **Azure AD App Registration** (Required)
+   - Go to [Azure Portal](https://portal.azure.com)
+   - Navigate to "Azure Active Directory" > "App registrations"
+   - Click "New registration"
+   - Name: "BibleNoteLM Dashboard"
+   - Supported account types: "Accounts in any organizational directory and personal Microsoft accounts"
+   - Redirect URI: Get from Firebase Console (format: `https://[project-id].firebaseapp.com/__/auth/handler`)
+   - Click "Register"
+
+4. **Configure Azure App**
+   - Copy "Application (client) ID"
+   - Go to "Certificates & secrets"
+   - Click "New client secret"
+   - Copy the secret value (show only once!)
+
+5. **Update Firebase Console**
+   - Paste "Application ID" in Firebase Console
+   - Paste "Application secret" in Firebase Console
+   - Click "Save"
+
+### Supported Microsoft Account Types
+
+The authentication supports:
+- **Personal Microsoft accounts** (Outlook.com, Hotmail.com, Live.com)
+- **Work/School accounts** (Office 365, Azure AD)
+- **Organizational accounts** (Company email with Microsoft SSO)
+
+### Testing Microsoft Sign-In
+
+1. Click "Sign in with Microsoft" button
+2. Select account or enter Microsoft email
+3. Authorize BibleNoteLM to access basic profile
+4. Redirect back to dashboard
 
 ---
 

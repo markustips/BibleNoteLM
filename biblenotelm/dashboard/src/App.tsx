@@ -52,11 +52,11 @@ const App: React.FC = () => {
           }
         />
 
-        {/* Church Admin Dashboard - For admin and pastor roles */}
+        {/* Dashboard - For members, pastors, and admin roles */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'pastor']}>
+            <ProtectedRoute allowedRoles={['member', 'subscriber', 'pastor', 'admin']}>
               <WebDashboard />
             </ProtectedRoute>
           }
@@ -86,10 +86,11 @@ const RootRedirect: React.FC = () => {
   // Redirect based on role
   if (role === 'super_admin') {
     return <Navigate to="/super-admin" replace />;
-  } else if (role === 'admin' || role === 'pastor') {
+  } else if (role === 'admin' || role === 'pastor' || role === 'member' || role === 'subscriber') {
     return <Navigate to="/dashboard" replace />;
   } else {
-    return <Navigate to="/unauthorized" replace />;
+    // Guest users who just signed up
+    return <Navigate to="/dashboard" replace />;
   }
 };
 

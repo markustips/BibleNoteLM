@@ -52,9 +52,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // Redirect based on user's actual role
     if (role === 'super_admin') {
       return <Navigate to="/super-admin" replace />;
-    } else if (role === 'admin' || role === 'pastor') {
-      return <Navigate to="/dashboard" replace />;
     } else {
+      // For roles not in allowedRoles (like guest), show unauthorized
       return <Navigate to="/unauthorized" replace />;
     }
   }
