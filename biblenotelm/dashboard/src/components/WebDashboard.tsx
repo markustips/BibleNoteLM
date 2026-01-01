@@ -58,6 +58,7 @@ const WebDashboard: React.FC = () => {
 
   const [activeSection, setActiveSection] = useState<DashboardSection>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
@@ -194,9 +195,19 @@ const WebDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex relative">
+      {/* Mobile Menu Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className={`bg-white shadow-xl transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-72'} flex flex-col border-r border-gray-200`}>
+      <aside className={`bg-white shadow-xl transition-all duration-300 flex flex-col border-r border-gray-200 fixed lg:static inset-y-0 left-0 z-50 ${
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      } ${sidebarCollapsed ? 'w-16' : 'w-72'}`}>
         {/* Logo */}
         <div className="p-6 border-b flex items-center justify-between">
           {!sidebarCollapsed && (
@@ -241,7 +252,10 @@ const WebDashboard: React.FC = () => {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveSection(item.id as DashboardSection)}
+                onClick={() => {
+                  setActiveSection(item.id as DashboardSection);
+                  setMobileMenuOpen(false); // Close mobile menu on navigation
+                }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-2 transition-all duration-200 ${
                   activeSection === item.id
                     ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30'
@@ -279,12 +293,20 @@ const WebDashboard: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto w-full lg:w-auto">
         {/* Header */}
-        <header className="bg-white shadow-sm px-8 py-5 flex items-center justify-between border-b border-gray-200">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800 capitalize">{activeSection}</h1>
-            <p className="text-gray-500 text-sm mt-0.5">
+        <header className="bg-white shadow-sm px-4 md:px-8 py-5 flex items-center justify-between border-b border-gray-200">
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors mr-4"
+          >
+            <Menu className="w-6 h-6 text-gray-700" />
+          </button>
+
+          <div className="flex-1">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-800 capitalize">{activeSection}</h1>
+            <p className="text-gray-500 text-xs md:text-sm mt-0.5 hidden sm:block">
               {activeSection === 'overview' && 'Welcome to your church dashboard'}
               {activeSection === 'announcements' && 'Manage church announcements'}
               {activeSection === 'events' && 'Schedule and manage events'}
@@ -313,7 +335,7 @@ const WebDashboard: React.FC = () => {
         </header>
 
         {/* Content Area */}
-        <div className="p-6">
+        <div className="p-4 md:p-6 lg:p-8">
           {/* Overview Section */}
           {activeSection === 'overview' && (
             <div className="space-y-6">
