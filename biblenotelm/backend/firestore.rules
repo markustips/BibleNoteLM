@@ -272,6 +272,38 @@ service cloud.firestore {
     }
 
     // ============================================
+    // DAILY VERSES
+    // ============================================
+    match /daily_verses/{verseId} {
+      // Members can read verses for their church
+      allow read: if isAuthenticated() &&
+                    belongsToChurch(resource.data.churchId);
+
+      // Pastors can create/update/delete verses for their church
+      allow create, update: if isAuthenticated() &&
+                              isPastor() &&
+                              belongsToChurch(request.resource.data.churchId);
+
+      allow delete: if isAuthenticated() &&
+                      isPastor() &&
+                      belongsToChurch(resource.data.churchId);
+    }
+
+    // ============================================
+    // CHURCH THEMES
+    // ============================================
+    match /church_themes/{churchId} {
+      // Members can read their church theme
+      allow read: if isAuthenticated() &&
+                    belongsToChurch(churchId);
+
+      // Pastors can update their church theme
+      allow write: if isAuthenticated() &&
+                     isPastor() &&
+                     belongsToChurch(churchId);
+    }
+
+    // ============================================
     // PRIVACY ENFORCEMENT
     // ============================================
 

@@ -103,6 +103,20 @@ export {
 } from './prayers';
 
 // ============================================
+// EXPORT DAILY VERSE FUNCTIONS
+// ============================================
+
+export {
+  saveDailyVerse,
+  deleteDailyVerse,
+  getDailyVerse,
+  getVerseCalendar,
+  setChurchTheme,
+  toggleAutoGenerate,
+  getChurchTheme,
+} from './verses';
+
+// ============================================
 // SCHEDULED FUNCTIONS
 // ============================================
 
