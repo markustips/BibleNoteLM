@@ -1,0 +1,25 @@
+{
+  "name": "biblenotelm-dashboard",
+  "version": "1.0.0",
+  "description": "Church Admin Dashboard for BibleNoteLM",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "firebase": "^12.7.0",
+    "lucide-react": "^0.562.0",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

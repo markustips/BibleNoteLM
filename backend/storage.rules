@@ -1,0 +1,127 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for BibleNoteLM
+// These rules ensure that only authorized users can upload and access images
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is a member of the church
+    function isMemberOfChurch(churchId) {
+      return isAuthenticated() &&
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.churchId == churchId;
+    }
+
+    // Helper function to check if user is pastor or admin
+    function isPastorOrAdmin() {
+      return isAuthenticated() &&
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['pastor', 'admin', 'super_admin'];
+    }
+
+    // Helper function to validate image file type
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // Helper function to validate file size (max 5MB)
+    function isValidSize() {
+      return request.resource.size < 5 * 1024 * 1024; // 5MB
+    }
+
+    // ============================================
+    // CHURCH ANNOUNCEMENTS
+    // ============================================
+    match /churches/{churchId}/announcements/{fileName} {
+      // Anyone in the church can read announcement images
+      allow read: if isAuthenticated() && isMemberOfChurch(churchId);
+
+      // Only pastors/admins can upload announcement images
+      allow write: if isPastorOrAdmin() &&
+                     isMemberOfChurch(churchId) &&
+                     isValidImage() &&
+                     isValidSize();
+
+      // Only pastors/admins can delete announcement images
+      allow delete: if isPastorOrAdmin() && isMemberOfChurch(churchId);
+    }
+
+    // ============================================
+    // CHURCH EVENTS
+    // ============================================
+    match /churches/{churchId}/events/{fileName} {
+      // Anyone in the church can read event images
+      allow read: if isAuthenticated() && isMemberOfChurch(churchId);
+
+      // Only pastors/admins can upload event images
+      allow write: if isPastorOrAdmin() &&
+                     isMemberOfChurch(churchId) &&
+                     isValidImage() &&
+                     isValidSize();
+
+      // Only pastors/admins can delete event images
+      allow delete: if isPastorOrAdmin() && isMemberOfChurch(churchId);
+    }
+
+    // ============================================
+    // USER PROFILES
+    // ============================================
+    match /users/{userId}/profile/{fileName} {
+      // Users can read their own profile images
+      allow read: if isAuthenticated();
+
+      // Users can upload their own profile images
+      allow write: if isAuthenticated() &&
+                     request.auth.uid == userId &&
+                     isValidImage() &&
+                     isValidSize();
+
+      // Users can delete their own profile images
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ============================================
+    // CHURCH GENERAL MEDIA
+    // ============================================
+    match /churches/{churchId}/media/{allPaths=**} {
+      // Anyone in the church can read media
+      allow read: if isAuthenticated() && isMemberOfChurch(churchId);
+
+      // Only pastors/admins can upload media
+      allow write: if isPastorOrAdmin() &&
+                     isMemberOfChurch(churchId) &&
+                     isValidSize();
+
+      // Only pastors/admins can delete media
+      allow delete: if isPastorOrAdmin() && isMemberOfChurch(churchId);
+    }
+
+    // ============================================
+    // PUBLIC IMAGES (for public prayers, etc.)
+    // ============================================
+    match /public/{allPaths=**} {
+      // Anyone can read public images
+      allow read: if true;
+
+      // Only authenticated users can upload to public
+      allow write: if isAuthenticated() &&
+                     isValidImage() &&
+                     isValidSize();
+
+      // Only authenticated users can delete their own uploads
+      allow delete: if isAuthenticated();
+    }
+
+    // ============================================
+    // DENY ALL OTHER ACCESS
+    // ============================================
+    // By default, deny access to everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

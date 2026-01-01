@@ -1,0 +1,7 @@
+{
+  "name": "ChurchConnect",
+  "description": "A comprehensive AI-powered application for church communities, featuring sermon recording, bible study tools, and community engagement.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

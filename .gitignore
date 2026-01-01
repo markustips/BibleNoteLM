@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+*.log
+lib/
+**/*.js.map
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebaserc
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+backend/functions/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+
+# Deployment artifacts
+backend/dashboard-admin-dist/
+backend/biblenotelm-dist/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Local settings
+.claude/settings.local.json
+
+# Service account keys (IMPORTANT: Never commit these!)
+**/serviceAccountKey.json
+**/service-account.json
+**/*-service-account.json

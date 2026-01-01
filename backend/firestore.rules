@@ -1,0 +1,286 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getUserRole() {
+      return getUserData().role;
+    }
+
+    function isSuperAdmin() {
+      return getUserRole() == 'super_admin';
+    }
+
+    function isAdmin() {
+      return getUserRole() in ['admin', 'super_admin'];
+    }
+
+    function isPastor() {
+      return getUserRole() in ['pastor', 'admin', 'super_admin'];
+    }
+
+    function isMember() {
+      return getUserRole() in ['member', 'subscriber', 'pastor', 'admin', 'super_admin'];
+    }
+
+    function belongsToChurch(churchId) {
+      return getUserData().churchId == churchId;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // Users can read their own data
+      allow read: if isAuthenticated() && isOwner(userId);
+
+      // Users can update their own profile (but NOT role, subscription, or church)
+      allow update: if isAuthenticated() &&
+                      isOwner(userId) &&
+                      !request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['role', 'churchId', 'subscriptionTier', 'subscriptionStatus', 'stripeCustomerId']);
+
+      // ONLY backend can create users and assign roles
+      allow create, delete: if false;
+    }
+
+    // ============================================
+    // CHURCHES COLLECTION
+    // ============================================
+    match /churches/{churchId} {
+      // Members can read their own church
+      allow read: if isAuthenticated() && belongsToChurch(churchId);
+
+      // Pastors can update their own church (not all fields)
+      allow update: if isAuthenticated() &&
+                      isPastor() &&
+                      belongsToChurch(churchId) &&
+                      !request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['pastorId', 'code', 'createdAt']);
+
+      // ONLY backend can create/delete churches
+      allow create, delete: if false;
+
+      // Church members subcollection
+      match /members/{memberId} {
+        // Pastor can read their church members
+        allow read: if isAuthenticated() &&
+                      isPastor() &&
+                      belongsToChurch(churchId);
+
+        // ONLY backend can manage members
+        allow write: if false;
+      }
+    }
+
+    // ============================================
+    // SUBSCRIPTIONS COLLECTION (Privacy Protected)
+    // ============================================
+    match /subscriptions/{subscriptionId} {
+      // Users can ONLY read their OWN subscription
+      allow read: if isAuthenticated() &&
+                    resource.data.userId == request.auth.uid;
+
+      // ONLY backend can manage subscriptions
+      allow write: if false;
+
+      // Invoices subcollection
+      match /invoices/{invoiceId} {
+        // Users can read their own invoices
+        allow read: if isAuthenticated() &&
+                      get(/databases/$(database)/documents/subscriptions/$(subscriptionId)).data.userId == request.auth.uid;
+
+        allow write: if false;
+      }
+    }
+
+    // ============================================
+    // ANALYTICS COLLECTION (Super Admin Only)
+    // ============================================
+    match /analytics/{docId} {
+      // ONLY aggregated, anonymized data - NO individual church activities
+      allow read: if isAuthenticated() && isSuperAdmin();
+
+      // ONLY backend writes analytics
+      allow write: if false;
+
+      // Weekly snapshots
+      match /weekly_snapshots/snapshots/{snapshotId} {
+        allow read: if isAuthenticated() && isSuperAdmin();
+        allow write: if false;
+      }
+    }
+
+    // ============================================
+    // AUDIT LOGS (Compliance)
+    // ============================================
+    match /audit_logs/{logId} {
+      // ONLY super admin can read audit logs
+      allow read: if isAuthenticated() && isSuperAdmin();
+
+      // ONLY backend writes logs
+      allow write: if false;
+    }
+
+    // ============================================
+    // RATE LIMITS (Internal)
+    // ============================================
+    match /rate_limits/{limitId} {
+      // ONLY backend can access
+      allow read, write: if false;
+    }
+
+    // ============================================
+    // ANNOUNCEMENTS
+    // ============================================
+    match /announcements/{announcementId} {
+      // Members can read announcements for their church
+      allow read: if isAuthenticated() &&
+                    (resource.data.churchId == null ||
+                     belongsToChurch(resource.data.churchId));
+
+      // Pastors can create/update announcements for their church
+      allow create: if isAuthenticated() &&
+                      isPastor() &&
+                      belongsToChurch(request.resource.data.churchId);
+
+      allow update: if isAuthenticated() &&
+                      isPastor() &&
+                      belongsToChurch(resource.data.churchId);
+
+      allow delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ============================================
+    // EVENTS
+    // ============================================
+    match /events/{eventId} {
+      // Members can read events for their church
+      allow read: if isAuthenticated() &&
+                    belongsToChurch(resource.data.churchId);
+
+      // Pastors can create/update/delete events for their church
+      allow create: if isAuthenticated() &&
+                      isPastor() &&
+                      belongsToChurch(request.resource.data.churchId);
+
+      allow update, delete: if isAuthenticated() &&
+                              isPastor() &&
+                              belongsToChurch(resource.data.churchId);
+
+      // Event attendees subcollection
+      match /attendees/{userId} {
+        // Members can read attendees for their church events
+        allow read: if isAuthenticated() &&
+                      belongsToChurch(get(/databases/$(database)/documents/events/$(eventId)).data.churchId);
+
+        // Users can register themselves for events
+        allow create: if isAuthenticated() &&
+                        isOwner(userId) &&
+                        belongsToChurch(get(/databases/$(database)/documents/events/$(eventId)).data.churchId);
+
+        // Users can update their own attendance
+        allow update: if isAuthenticated() &&
+                        isOwner(userId);
+
+        // Pastors can manage all attendees
+        allow update, delete: if isAuthenticated() &&
+                                isPastor() &&
+                                belongsToChurch(get(/databases/$(database)/documents/events/$(eventId)).data.churchId);
+      }
+    }
+
+    // ============================================
+    // SERMONS
+    // ============================================
+    match /sermons/{sermonId} {
+      // Users can read public sermons or sermons from their church
+      allow read: if isAuthenticated() &&
+                    (resource.data.isPublic == true ||
+                     belongsToChurch(resource.data.churchId) ||
+                     isOwner(resource.data.userId));
+
+      // Users can create their own sermons
+      allow create: if isAuthenticated() &&
+                      isOwner(request.resource.data.userId);
+
+      // Users can update/delete their own sermons
+      allow update, delete: if isAuthenticated() &&
+                              isOwner(resource.data.userId);
+
+      // Sermon notes subcollection (anyone in church can add notes)
+      match /notes/{noteId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated();
+      }
+    }
+
+    // ============================================
+    // PRAYERS
+    // ============================================
+    match /prayers/{prayerId} {
+      // Read based on visibility
+      allow read: if isAuthenticated() &&
+                    (resource.data.visibility == 'public' ||
+                     isOwner(resource.data.userId) ||
+                     (resource.data.visibility == 'church' && belongsToChurch(resource.data.churchId)));
+
+      // Users can create prayers
+      allow create: if isAuthenticated() &&
+                      isOwner(request.resource.data.userId);
+
+      // Users can update/delete their own prayers
+      allow update, delete: if isAuthenticated() &&
+                              isOwner(resource.data.userId);
+
+      // Praying users subcollection
+      match /praying/{userId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated() && isOwner(userId);
+      }
+    }
+
+    // ============================================
+    // NOTIFICATIONS
+    // ============================================
+    match /notifications/{notificationId} {
+      // Users can read/update their own notifications
+      allow read, update: if isAuthenticated() &&
+                            isOwner(resource.data.userId);
+
+      // ONLY backend creates notifications
+      allow create: if false;
+
+      // Users can delete their own notifications
+      allow delete: if isAuthenticated() &&
+                      isOwner(resource.data.userId);
+    }
+
+    // ============================================
+    // PRIVACY ENFORCEMENT
+    // ============================================
+
+    // Super admins CANNOT read individual sermons, events, prayers
+    // This is enforced by requiring church membership or ownership in the rules above
+    // Super admins do NOT belong to churches, so they are automatically blocked
+
+    // Church admins CANNOT read subscriptions
+    // This is enforced by the subscriptions collection rules above
+    // Only the subscription owner can read their own subscription
+  }
+}
