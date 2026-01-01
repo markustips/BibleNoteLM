@@ -2,7 +2,7 @@
 import React from 'react';
 
 // RBAC Types
-export type UserRole = 'guest' | 'member' | 'subscriber' | 'pastor' | 'admin';
+export type UserRole = 'guest' | 'member' | 'subscriber' | 'pastor' | 'admin' | 'super_admin';
 
 export type SubscriptionTier = 'free' | 'basic' | 'premium';
 
@@ -91,6 +91,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   subscriber: ['view_public_content', 'view_church_content', 'create_prayer_request', 'view_events', 'record_sermon', 'ai_features', 'take_notes'],
   pastor: ['view_public_content', 'view_church_content', 'create_prayer_request', 'view_events', 'record_sermon', 'ai_features', 'take_notes', 'manage_announcements', 'manage_events', 'view_members'],
   admin: ['view_public_content', 'view_church_content', 'create_prayer_request', 'view_events', 'record_sermon', 'ai_features', 'take_notes', 'manage_announcements', 'manage_events', 'view_members', 'manage_church', 'manage_roles', 'manage_subscriptions'],
+  super_admin: ['view_public_content', 'view_church_content', 'create_prayer_request', 'view_events', 'record_sermon', 'ai_features', 'take_notes', 'manage_announcements', 'manage_events', 'view_members', 'manage_church', 'manage_roles', 'manage_subscriptions', 'view_all_churches', 'view_all_subscribers', 'view_system_analytics', 'manage_platform'],
 };
 
 export const hasPermission = (role: UserRole, permission: string): boolean => {

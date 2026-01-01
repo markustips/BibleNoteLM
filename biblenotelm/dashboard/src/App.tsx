@@ -1,9 +1,15 @@
 import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import WebDashboard from './components/WebDashboard';
+import SuperAdminDashboard from './components/SuperAdminDashboard';
+import LoginPage from './components/LoginPage';
+import UnauthorizedPage from './components/UnauthorizedPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
+import { useUserStore } from './stores/useUserStore';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -27,7 +33,64 @@ const App: React.FC = () => {
     console.log('Firebase Project:', firebaseConfig.projectId);
   }, []);
 
-  return <WebDashboard />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Login Route */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Unauthorized Route */}
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+        {/* Super Admin Dashboard - Only for super_admin role */}
+        <Route
+          path="/super-admin"
+          element={
+            <ProtectedRoute requiredRole="super_admin">
+              <SuperAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Church Admin Dashboard - For admin and pastor roles */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'pastor']}>
+              <WebDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Default Route - Redirect based on authentication and role */}
+        <Route
+          path="/"
+          element={<RootRedirect />}
+        />
+
+        {/* Catch all - redirect to root */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
+// Component to handle root redirect based on user role
+const RootRedirect: React.FC = () => {
+  const { isAuthenticated, role } = useUserStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Redirect based on role
+  if (role === 'super_admin') {
+    return <Navigate to="/super-admin" replace />;
+  } else if (role === 'admin' || role === 'pastor') {
+    return <Navigate to="/dashboard" replace />;
+  } else {
+    return <Navigate to="/unauthorized" replace />;
+  }
 };
 
 export default App;
