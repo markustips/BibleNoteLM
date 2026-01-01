@@ -36,12 +36,14 @@ import {
 } from 'lucide-react';
 import { useUserStore } from '../stores/useUserStore';
 import { useChurchStore } from '../stores/useChurchStore';
+import { useAuth } from '../hooks/useAuth';
 import { Announcement, ChurchEvent } from '../types';
 
 type DashboardSection = 'overview' | 'announcements' | 'events' | 'members' | 'sermons' | 'analytics' | 'settings';
 
 const WebDashboard: React.FC = () => {
   const { user, role, churchName, can } = useUserStore();
+  const { signOut } = useAuth();
   const { 
     churches, 
     announcements, 
@@ -265,6 +267,13 @@ const WebDashboard: React.FC = () => {
                 <p className="text-xs text-gray-500 capitalize">{role}</p>
               </div>
             )}
+            <button
+              onClick={signOut}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors group"
+              title="Sign out"
+            >
+              <LogOut className="w-5 h-5 text-gray-600 group-hover:text-red-600" />
+            </button>
           </div>
         </div>
       </aside>
