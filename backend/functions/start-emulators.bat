@@ -1,0 +1,9 @@
+@echo off
+echo Starting Firebase Emulators...
+echo.
+echo Building TypeScript...
+call npm run build
+echo.
+echo Starting emulators...
+cd ..
+firebase emulators:start --only functions,firestore,auth

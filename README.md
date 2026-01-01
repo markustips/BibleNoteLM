@@ -35,11 +35,20 @@ A comprehensive church management and community platform that connects church me
 - **Authentication**: Firebase Auth
 - **Payments**: Stripe
 
-### Mobile App
-- **Framework**: Flutter / React Native
-- **Platforms**: Android (iOS coming soon)
-- **State Management**: Provider / Redux
-- **Offline Storage**: SQLite / Hive
+### Dashboard (Church Admin)
+- **Framework**: React 19 + TypeScript
+- **Build Tool**: Vite
+- **State Management**: Zustand
+- **UI**: TailwindCSS
+- **Live URL**: https://church-biblenotelm.web.app
+
+### Mobile/Web App (Member App)
+- **Framework**: React 19 + TypeScript
+- **Build Tool**: Vite
+- **State Management**: Zustand
+- **Platform**: Progressive Web App (PWA)
+- **Offline Support**: Service Workers + IndexedDB
+- **Live URL**: https://app-biblenotelm.web.app
 
 ## 🚀 Quick Start
 

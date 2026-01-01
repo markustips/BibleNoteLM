@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "biblenotelm-6cf80"
+  },
+  "targets": {
+    "biblenotelm-6cf80": {
+      "hosting": {
+        "dashboard": [
+          "church-biblenotelm"
+        ],
+        "app": [
+          "app-biblenotelm"
+        ]
+      }
+    }
+  }
+}
