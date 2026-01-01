@@ -9,10 +9,14 @@ The BibleNoteLM dashboard implements a multi-tier authentication system with rol
 
 ### Authentication Methods
 
+- **Email/Password** - Traditional email and password authentication
+  - Sign up with email and password
+  - Sign in with email and password
+  - Password reset functionality
 - **Google Sign-In** - OAuth authentication via Google accounts
 - **Microsoft/Outlook Sign-In** - OAuth authentication via Microsoft accounts (Outlook, Office 365, etc.)
 
-All users (members, pastors, admins, super admins) can sign in using either Google or Microsoft authentication.
+All users (members, pastors, admins, super admins) can sign in using email/password, Google, or Microsoft authentication.
 
 ---
 
@@ -220,16 +224,21 @@ Located: [src/hooks/useAuth.ts](../src/hooks/useAuth.ts)
 **Purpose:** Manages Firebase authentication and syncs with Zustand store
 
 **Methods:**
+- `signUpWithEmail(email, password, displayName)` - Create account with email/password
+- `signInWithEmail(email, password)` - Sign in with email/password
 - `signInWithGoogle()` - Sign in with Google OAuth
 - `signInWithMicrosoft()` - Sign in with Microsoft/Outlook OAuth
+- `resetPassword(email)` - Send password reset email
 - `signOut()` - Sign out current user
 - `loading` - Authentication loading state
 - `error` - Authentication error message
 
 **Features:**
 - Automatic user creation for first-time sign-ins
-- Default role assignment (`member`)
+- Default role assignment (`guest`)
 - Last login timestamp tracking
+- Password reset functionality
+- User-friendly error messages
 - Seamless integration with Zustand state
 
 **Usage:**
@@ -255,15 +264,19 @@ const MyComponent = () => {
 
 Located: [src/components/LoginPage.tsx](../src/components/LoginPage.tsx)
 
-**Purpose:** Login screen with Google and Microsoft Sign-In buttons
+**Purpose:** Login screen with email/password, Google, and Microsoft authentication
 
 **Features:**
+- Email/password authentication (sign up, sign in, password reset)
 - Google OAuth integration
 - Microsoft/Outlook OAuth integration
-- Loading state during sign-in
-- Error display
+- Toggle between sign-in, sign-up, and password reset modes
+- Form validation
+- Loading state during authentication
+- User-friendly error messages
+- Success confirmation for password reset
 - Responsive design
-- Separate loading states for each provider
+- Separate loading states for each auth method
 
 ---
 

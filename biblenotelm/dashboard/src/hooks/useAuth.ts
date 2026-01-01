@@ -3,6 +3,9 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   OAuthProvider,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   User as FirebaseUser
@@ -141,6 +144,99 @@ export const useAuth = () => {
     }
   };
 
+  const signUpWithEmail = async (email: string, password: string, displayName: string) => {
+    try {
+      setError(null);
+      setLoading(true);
+
+      // Create user with email and password
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+
+      // Create user document in Firestore with display name
+      const userDocRef = doc(db, 'users', result.user.uid);
+      const newUserData = {
+        uid: result.user.uid,
+        name: displayName || 'User',
+        email: email,
+        photoURL: '',
+        role: 'guest', // Default role for new users
+        subscriptionTier: 'free',
+        churchId: null,
+        churchCode: null,
+        churchName: null,
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+      };
+
+      await setDoc(userDocRef, newUserData);
+
+      // User data will be loaded by onAuthStateChanged
+      return result.user;
+    } catch (err: any) {
+      console.error('Error signing up with email:', err);
+      let errorMessage = 'Failed to create account';
+
+      if (err.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered';
+      } else if (err.code === 'auth/weak-password') {
+        errorMessage = 'Password should be at least 6 characters';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address';
+      }
+
+      setError(errorMessage);
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  const signInWithEmail = async (email: string, password: string) => {
+    try {
+      setError(null);
+      setLoading(true);
+
+      const result = await signInWithEmailAndPassword(auth, email, password);
+
+      // User data will be loaded by onAuthStateChanged
+      return result.user;
+    } catch (err: any) {
+      console.error('Error signing in with email:', err);
+      let errorMessage = 'Failed to sign in';
+
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        errorMessage = 'Invalid email or password';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address';
+      } else if (err.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed attempts. Please try again later';
+      }
+
+      setError(errorMessage);
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      setError(null);
+      await sendPasswordResetEmail(auth, email);
+      return true;
+    } catch (err: any) {
+      console.error('Error sending password reset email:', err);
+      let errorMessage = 'Failed to send reset email';
+
+      if (err.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address';
+      }
+
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
   const signOut = async () => {
     try {
       setError(null);
@@ -158,6 +254,9 @@ export const useAuth = () => {
     error,
     signInWithGoogle,
     signInWithMicrosoft,
+    signUpWithEmail,
+    signInWithEmail,
+    resetPassword,
     signOut,
   };
 };
