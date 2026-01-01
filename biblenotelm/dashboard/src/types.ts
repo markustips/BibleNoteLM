@@ -86,12 +86,23 @@ export interface PrayerRequest {
 
 // Permission helpers
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  guest: ['view_public_content'],
-  member: ['view_public_content', 'view_church_content', 'create_prayer_request', 'view_events'],
-  subscriber: ['view_public_content', 'view_church_content', 'create_prayer_request', 'view_events', 'record_sermon', 'ai_features', 'take_notes'],
-  pastor: ['view_public_content', 'view_church_content', 'create_prayer_request', 'view_events', 'record_sermon', 'ai_features', 'take_notes', 'manage_announcements', 'manage_events', 'view_members'],
-  admin: ['view_public_content', 'view_church_content', 'create_prayer_request', 'view_events', 'record_sermon', 'ai_features', 'take_notes', 'manage_announcements', 'manage_events', 'view_members', 'manage_church', 'manage_roles', 'manage_subscriptions'],
-  super_admin: ['view_public_content', 'view_church_content', 'create_prayer_request', 'view_events', 'record_sermon', 'ai_features', 'take_notes', 'manage_announcements', 'manage_events', 'view_members', 'manage_church', 'manage_roles', 'manage_subscriptions', 'view_all_churches', 'view_all_subscribers', 'view_system_analytics', 'manage_platform'],
+  // Guest: No church affiliation - can only access daily verse and subscribe for AI features
+  guest: ['view_daily_verse', 'view_bible'],
+
+  // Member: Has joined a church - can access church content
+  member: ['view_daily_verse', 'view_bible', 'view_church_content', 'view_announcements', 'view_events', 'view_prayer_requests', 'create_prayer_request'],
+
+  // Subscriber: Paid member - gets AI features, sermon recording, note-taking
+  subscriber: ['view_daily_verse', 'view_bible', 'view_church_content', 'view_announcements', 'view_events', 'view_prayer_requests', 'create_prayer_request', 'record_sermon', 'ai_features', 'ai_sermon_summary', 'take_notes'],
+
+  // Pastor: Church leader - can manage content
+  pastor: ['view_daily_verse', 'view_bible', 'view_church_content', 'view_announcements', 'view_events', 'view_prayer_requests', 'create_prayer_request', 'record_sermon', 'ai_features', 'ai_sermon_summary', 'take_notes', 'manage_announcements', 'manage_events', 'manage_prayers', 'view_members'],
+
+  // Admin: Church administrator - full church management
+  admin: ['view_daily_verse', 'view_bible', 'view_church_content', 'view_announcements', 'view_events', 'view_prayer_requests', 'create_prayer_request', 'record_sermon', 'ai_features', 'ai_sermon_summary', 'take_notes', 'manage_announcements', 'manage_events', 'manage_prayers', 'view_members', 'manage_church', 'manage_roles', 'manage_subscriptions'],
+
+  // Super Admin: Platform owner - full platform access
+  super_admin: ['view_daily_verse', 'view_bible', 'view_church_content', 'view_announcements', 'view_events', 'view_prayer_requests', 'create_prayer_request', 'record_sermon', 'ai_features', 'ai_sermon_summary', 'take_notes', 'manage_announcements', 'manage_events', 'manage_prayers', 'view_members', 'manage_church', 'manage_roles', 'manage_subscriptions', 'view_all_churches', 'view_all_subscribers', 'view_system_analytics', 'manage_platform'],
 };
 
 export const hasPermission = (role: UserRole, permission: string): boolean => {

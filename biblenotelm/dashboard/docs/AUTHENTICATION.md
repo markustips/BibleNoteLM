@@ -64,16 +64,20 @@ guest (Not Authenticated)
 - Premium features (AI, sermon recording, note-taking)
 
 #### `member`
-- View church content
-- Create prayer requests
-- View events
-- Access to Church Dashboard (`/dashboard`)
-- Basic features (can be upgraded to subscriber)
+- All guest permissions
+- View church announcements
+- View church events
+- View and create prayer requests
+- Access church-specific content
+- **Requirement:** Must join a church using a church code
 
 #### `guest`
-- No access to dashboard
-- Redirected to login page
-- Note: New users are automatically assigned `member` role upon first sign-in
+- Access to daily Bible verse
+- Access to Bible reading
+- Can subscribe for AI features (notes, sermon summary)
+- **No access to:** Church announcements, events, prayer requests
+- **Default role** for new users upon first sign-in
+- **Becomes `member`** when joining a church with a church code
 
 ---
 
@@ -123,13 +127,54 @@ When a user signs in for the first time:
 2. System checks if user document exists in Firestore
 3. If not exists:
    - Create new user document
-   - Assign default role: `member`
+   - Assign default role: `guest` (no church affiliation)
    - Set subscriptionTier: `free`
    - Record createdAt and lastLogin timestamps
 4. Redirect to `/dashboard`
-5. User can then join a church using a church code
+5. User sees limited content (only daily verse and Bible)
+6. User can join a church using a church code
+7. Upon joining church:
+   - Role changes from `guest` to `member`
+   - User gains access to church announcements, events, prayer requests
 
-### 3. Protected Routes
+### 4. Guest vs Member Access
+
+#### Guest Users (No Church Affiliation)
+
+**Access:**
+- ✅ Daily Bible verse
+- ✅ Bible reading
+- ✅ Can subscribe for AI features (paid)
+- ❌ Church announcements
+- ❌ Church events
+- ❌ Prayer requests
+
+**Use Case:** New users who haven't joined a church yet, or users exploring the platform
+
+#### Member Users (Joined a Church)
+
+**Access:**
+- ✅ All guest permissions
+- ✅ Church announcements
+- ✅ Church events
+- ✅ View prayer requests
+- ✅ Create prayer requests
+- ✅ Church-specific content
+
+**How to become a member:** Join a church using a church code (provided by church admin/pastor)
+
+#### Subscriber Users (Paid Subscription)
+
+**Access:**
+- ✅ All member permissions
+- ✅ AI sermon summarization
+- ✅ AI-powered note-taking
+- ✅ Sermon recording features
+- ✅ Advanced AI features
+
+**Pricing:** Guest or Member can upgrade to Subscriber (basic or premium tier)
+
+### 5. Protected Routes
 
 Every protected route uses the `<ProtectedRoute>` component:
 

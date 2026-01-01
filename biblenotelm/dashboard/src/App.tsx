@@ -52,11 +52,11 @@ const App: React.FC = () => {
           }
         />
 
-        {/* Dashboard - For members, pastors, and admin roles */}
+        {/* Dashboard - For all authenticated users (guests can access limited features) */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute allowedRoles={['member', 'subscriber', 'pastor', 'admin']}>
+            <ProtectedRoute allowedRoles={['guest', 'member', 'subscriber', 'pastor', 'admin']}>
               <WebDashboard />
             </ProtectedRoute>
           }
@@ -86,10 +86,9 @@ const RootRedirect: React.FC = () => {
   // Redirect based on role
   if (role === 'super_admin') {
     return <Navigate to="/super-admin" replace />;
-  } else if (role === 'admin' || role === 'pastor' || role === 'member' || role === 'subscriber') {
-    return <Navigate to="/dashboard" replace />;
   } else {
-    // Guest users who just signed up
+    // All authenticated users (guest, member, subscriber, pastor, admin) go to dashboard
+    // Dashboard will show different content based on role and permissions
     return <Navigate to="/dashboard" replace />;
   }
 };

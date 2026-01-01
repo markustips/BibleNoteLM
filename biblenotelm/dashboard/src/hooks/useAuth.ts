@@ -47,7 +47,7 @@ export const useAuth = () => {
           name: userData.name || firebaseUser.displayName || 'User',
           email: userData.email || firebaseUser.email || '',
           avatar: userData.photoURL || firebaseUser.photoURL || '',
-          role: userData.role as UserRole || 'member',
+          role: userData.role as UserRole || 'guest',
           subscriptionTier: userData.subscriptionTier || 'free',
           churchId: userData.churchId || null,
           churchCode: userData.churchCode || null,
@@ -60,13 +60,14 @@ export const useAuth = () => {
           lastLogin: serverTimestamp(),
         }, { merge: true });
       } else {
-        // User document doesn't exist in Firestore - create new user as member
+        // User document doesn't exist in Firestore - create new user as guest
+        // User becomes 'member' when they join a church using a church code
         const newUserData = {
           uid: firebaseUser.uid,
           name: firebaseUser.displayName || 'User',
           email: firebaseUser.email || '',
           photoURL: firebaseUser.photoURL || '',
-          role: 'member', // Default role for new users
+          role: 'guest', // Default role for new users (no church affiliation)
           subscriptionTier: 'free',
           churchId: null,
           churchCode: null,
@@ -84,7 +85,7 @@ export const useAuth = () => {
           name: firebaseUser.displayName || 'User',
           email: firebaseUser.email || '',
           avatar: firebaseUser.photoURL || '',
-          role: 'member',
+          role: 'guest',
           subscriptionTier: 'free',
           churchId: null,
           churchCode: null,
